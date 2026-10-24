@@ -151,7 +151,9 @@ job_id = "backend-audit"
 package = "proposal"
 ```
 
-Each approval reaches the dependent's next successful run once, whatever happens to the upstream since; proposals still awaiting a decision hold it (`waiting for package: backend-audit/proposal (1 awaiting approval)`). Without such a job, approving only records the decision.
+To have one job apply every job's proposals, without listing each, write `job_id = "*"`: it takes those of every job in the repository that no other job takes, jobs added later included, except its own and those of jobs downstream of it. One job per repository may have it.
+
+Each approval reaches one dependent's next successful run, once: the first job to take it, even when two depend on the same job's proposals or the one that took it is later removed, whatever happens to the upstream since; proposals still awaiting a decision hold it (`waiting for package: backend-audit/proposal (1 awaiting approval)`). A dependent that also runs on a schedule (`every` or `cron`) or on other packages is never held by proposals: it runs as those say, and each run takes the approvals there are, so a backlog job (labelled tracker tickets every 30 minutes, say) can also implement the proposals approved on the Floor; its procedure then says to do an approved proposal first. Without such a job, approving only records the decision.
 
 ## Procedure format: `.nightshift/procedures/<name>.md`
 
