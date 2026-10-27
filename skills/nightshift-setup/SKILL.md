@@ -139,12 +139,16 @@ The dependent runs when the upstream publishes new packages, so a job with depen
 `job_id` names a job of this repository. A dependency may name a job of another repository with `repository`, once that job lists this repository in its `consumers`:
 
 ```toml
+# downstream job (acme/company-brain)
 [[dependencies]]
 job_id = "granola-export"
 package = "digest"
 repository = "acme/mind"                  # owner/repo of the upstream job
+```
 
-consumers = ["acme/company-brain"]        # in the upstream job: repositories whose jobs may depend on its outputs
+```toml
+# upstream job (acme/mind), top level, before any [[...]] table
+consumers = ["acme/company-brain"]        # repositories whose jobs may depend on its outputs
 ```
 
 The dependent's session gets each package's `data` and `content` with its assignment, never the upstream repository's files, runs or reports, so the upstream's procedure decides what crosses: have its minion return the shared material as the package's `content` (only the claim that consumes it receives it, and the factory clears it once every dependent has), and keep `data` to light metadata such as paths and counts, which the Floor shows. When a script must decide what crosses, have the minion only run it and pass its output on, with `data.sha256` (each `content.files` path and the SHA-256 of its text): the factory refuses a package whose files differ. Until the upstream exists and lists this repository, the dependent waits (`no job of this factory shares this package with this repository`), the same answer whether the job is missing or does not share. `proposal` packages only come from a job of this repository: leave out `repository`. Changing `consumers` never makes a job run again.
