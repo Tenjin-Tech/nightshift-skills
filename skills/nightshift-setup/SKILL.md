@@ -1,9 +1,9 @@
 ---
 name: nightshift-setup
-description: Set up Night Shift for the current repository - analyze it, propose background jobs, write them to .nightshift/ (like .github/workflows), create one read-only minion agent per role, and validate everything with the factory. Use for /nightshift-setup, $nightshift-setup, "set up the factory here", or "add a Night Shift job".
+description: Set up Night Shift for the current repository - analyze it, propose background jobs, write them to .nightshift/ (like .github/workflows), create one minion agent per role, and validate everything with the factory. Use for /nightshift-setup, $nightshift-setup, "set up the factory here", or "add a Night Shift job".
 ---
 
-Night Shift jobs live in the repository they watch, the way GitHub Actions workflows live in `.github/workflows/`. Each job belongs to a role, and each role has a minion: a read-only agent that runs that role's jobs and appears on the factory floor.
+Night Shift jobs live in the repository they watch, the way GitHub Actions workflows live in `.github/workflows/`. Each job belongs to a role, and each role has a minion: an agent that runs that role's jobs, reading only unless they write, and appears on the factory floor.
 
 ```
 .nightshift/jobs/<id>.toml           # one standing job
@@ -218,7 +218,7 @@ Everything above is allowed by default. When the user wants a limit (step 5), us
 
 | To keep the minion from | Use |
 |---|---|
-| editing files | `source_access = "read_only"` (with `external_writes = "forbidden"`); a writer edits only inside `scope`, which the factory session checks |
+| editing files | `source_access = "read_only"` (with `external_writes = "forbidden"`); the factory session checks a reader edited nothing, and a writer only inside `scope` |
 | having its pull request merged without a person (the minion and the session never merge; the factory does with `merge = "auto"`) | leave out `merge = "auto"` (the default is `manual`) |
 | creating the tracker issue | `task_creation = "human_approval_required"`: it returns the issue as a proposal |
 | returning proposals, so its pull request is the only thing to review | `proposals = "forbidden"`, with `task_creation` and `network` allowed: its follow-ups become tracker issues |
