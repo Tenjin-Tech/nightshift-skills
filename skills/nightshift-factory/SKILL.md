@@ -75,7 +75,7 @@ Blocked hosts: when a run fails because the sandbox refused a host (a step logge
 
 <needed_by> The sandbox refused it, so <the command that failed, for example the commit> failed.
 
-**To fix:** in claude.ai, open the routine, then its cloud environment, then Network access. Choose a custom allowlist, add `<host>`, save, and rerun the job.
+**To fix:** in claude.ai, open the routine, then its cloud environment, then Network access. Choose Custom, check **Also include default list of common package managers**, keep the domains already listed, add `<host>` to Allowed domains, save, and rerun the job. If `<host>` is an MCP server, turn on that service's connector on the routine instead: a connector needs no allowed domain.
 ```
 In Codex, the **To fix:** line reads instead: `**To fix:** in chatgpt.com/codex, open Settings, then Environments, then this repository's environment. Turn Agent internet access on with the Common dependencies allowlist, add `<host>` to its additional allowed domains, save, and rerun the job.`
 finish_assignment adds a block or summary start you left out, and accepts only the outcome failed for such a run.
