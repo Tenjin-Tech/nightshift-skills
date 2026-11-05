@@ -264,7 +264,7 @@ Everything above is allowed by default. When the user wants a limit (step 5), us
 | one action in particular (posting to Slack, a write API, a command, a folder it should not read) | a rule in the job's procedure, such as "Do not post messages; report them instead." |
 | running commands, fetching web pages or calling an MCP tool, for every job of a role | Claude Code: leave `Bash`, `WebFetch`/`WebSearch` or that MCP tool out of the minion's `tools`. With `Bash` kept, the minion can still reach the network through commands (`curl`), so only leaving out `Bash` keeps a role off the network |
 
-A minion asks no questions by default: it decides each open point itself and makes the change it decided, or returns it as a proposal or tracker issue as its permissions allow. To let a job leave questions for a person, say so in its procedure, such as "List what needs a person's decision."
+A minion asks no questions by default: it decides each open point itself and makes the change it decided, or returns it as a proposal or tracker issue as its permissions allow. To let a job leave questions for a person, say so in its procedure, such as "List under `## Needs a person` what a person must settle before merging." The Floor shows that section above the pull request's actions.
 
 `[permissions]` and procedure rules are instructions the minion follows. Claude Code enforces a minion's `tools`, so use them when a limit must hold even if the minion misreads; a Codex agent file cannot change the session's sandbox or MCP servers, so set `agent = "claude"` on such a job. Keep jobs with different limits in different roles, since a role's minion has one set of tools.
 
