@@ -1,6 +1,6 @@
 ---
 name: nightshift-setup
-description: Set up Night Shift for the current repository - analyze it, propose background jobs, write them to .nightshift/ (like .github/workflows), create one minion agent per role, and validate everything with the factory. Also creates the Claude routine that runs them. Use for /nightshift-setup, $nightshift-setup, "set up the factory here", "create a routine", "add a Night Shift job", or "add this repository's checks".
+description: Set up Night Shift for the current repository - analyze it, propose background jobs, write them to .nightshift/ (like .github/workflows), create one minion agent per role, and validate everything with the factory. Also creates the Claude routine that runs them. Use for /nightshift-setup, $nightshift-setup, "set up the factory here", "create a routine", "add a Night Shift job", "add departments", or "add this repository's checks".
 ---
 
 Night Shift jobs live in the repository they watch, the way GitHub Actions workflows live in `.github/workflows/`. Each job belongs to a role, and each role has a minion: an agent that runs that role's jobs, reading only unless they write, and appears on the factory floor.
@@ -8,7 +8,7 @@ Night Shift jobs live in the repository they watch, the way GitHub Actions workf
 ```
 .nightshift/jobs/<id>.toml           # one standing job
 .nightshift/procedures/<name>.md     # the instructions its minion follows
-.nightshift/defaults.toml            # ticket_prefix = "RB" (its Night Shift tickets: RB-12); optional agent = "claude" or "codex"
+.nightshift/defaults.toml            # ticket_prefix = "RB" (its Night Shift tickets: RB-12); optional agent = "claude" or "codex"; [departments], each role's department
 .nightshift/local.toml               # the checks a computer runs on an issue assigned to Night Shift
 .claude/agents/<role>.md             # the role's minion for Claude Code
 .codex/agents/<role>.toml            # the same minion for Codex
@@ -78,7 +78,7 @@ Night Shift jobs live in the repository they watch, the way GitHub Actions workf
      ```
      Then tell the user to do this for each routine's environment on claude.ai: add the factory's host to its allowed network hosts, set `NIGHTSHIFT_TOKEN` to an API key from Settings, API keys, and, unless the factory is at `https://nightshiftfactory.com`, set `NIGHTSHIFT_URL` to its origin. These hooks do nothing on a computer or without the key. Only `Stop` waits for its upload, at most 15 seconds, so the session cannot end before its last steps are sent.
    Run `git check-ignore .mcp.json .codex/config.toml .claude/settings.json`: if one is ignored, tell the user, because cloud sessions will not get it.
-   Write `.nightshift/defaults.toml` with `ticket_prefix`, the prefix of this repository's Night Shift tickets (`RB` for `RB-12`): 2 to 5 capital letters or digits, starting with a letter. Offer the initials of the repository's name (`rose-brain`: `RB`), or its first two letters for a one-word name (`inboundx`: `IN`), which is what Night Shift uses when none is set, and ask the user to confirm it; if you cannot ask, write that one. Never offer the key of a Linear team the hopper reads (`IX` beside Linear's `IX-1234` would be ambiguous), nor one another repository of the same GitHub owner uses: check-in refuses both. Keep any other line of an existing `defaults.toml`, and an existing `ticket_prefix`.
+   Write each role's department, as **Departments** below says. Write `.nightshift/defaults.toml` with `ticket_prefix`, the prefix of this repository's Night Shift tickets (`RB` for `RB-12`): 2 to 5 capital letters or digits, starting with a letter. Offer the initials of the repository's name (`rose-brain`: `RB`), or its first two letters for a one-word name (`inboundx`: `IN`), which is what Night Shift uses when none is set, and ask the user to confirm it; if you cannot ask, write that one. Never offer the key of a Linear team the hopper reads (`IX` beside Linear's `IX-1234` would be ambiguous), nor one another repository of the same GitHub owner uses: check-in refuses both. Keep any other line of an existing `defaults.toml`, and an existing `ticket_prefix`.
 9. Go through **Checks** below, so issues assigned to Night Shift can run here too.
 10. Call `validate_jobs` with every file under `.nightshift/` (path to content). Fix what it reports and validate again until it passes. Check that each `scope` directory exists.
 11. Show the user the files, and the diff of a `.claude/settings.json` that already existed. Commit them on a new branch only if the user agrees; do not push or open a pull request without asking.
@@ -87,6 +87,27 @@ Night Shift jobs live in the repository they watch, the way GitHub Actions workf
    When this adds `.nightshift/local.toml`, say computers read it only from the default branch: until it is merged there, issues assigned to Night Shift in this repository still fail, even when the jobs branch has it.
    When a job has a `nightshift` hopper, say approving a proposal on the Floor makes it a ticket (`RB-12`, listed under Issues) that this job implements as one pull request. When a job has a `linear` hopper, also say Night Shift reads its tickets from the Linear workspace connected in the factory's Settings, Assigned issues, with this repository chosen there: until then the job waits for Linear and says so. People hand it work by putting the label on a ticket. With `merge = "by_ticket"`, also say a ticket's Automerge label lets its pull request merge without a person; with none, a person merges.
    When a job reads Dependabot alerts (a security-fix or dependabot job), also say its routine needs a GitHub credential that can read them: cloud sessions reach GitHub through the account's GitHub connection, by default the Claude GitHub App, which cannot, so the job fails with 403 `Resource not accessible by integration`. Give both ways to grant it: (1) in a local terminal where `gh auth status` is logged in, start `claude`, check that `/status` shows the claude.ai account that owns the routine, and type `/web-setup` (not in a cloud session, where it is not available); it must print `Connected as <github-user>`, and it replaces the GitHub connection of all the account's cloud sessions (on Team and Enterprise plans an Owner first turns on Quick setup, Organization settings > Claude Code); (2) or set `GH_TOKEN` in the routine's cloud environment variables, a fine-grained token limited to the repository with Dependabot alerts: read, Pull requests: read and write, and Metadata: read, which anyone using the environment can read. When you can, run the check `gh api "repos/<owner>/<repo>/dependabot/alerts?state=open&per_page=1" --jq length` and report its result: a number means this session's credential can read the alerts (in a cloud session, so can the routine's); a 403 `Resource not accessible by integration` means it cannot yet and `Resource not accessible by personal access token` means the `GH_TOKEN` lacks Dependabot alerts: read (a rate-limit 403 says nothing about the credential).
+
+## Departments: `[departments]` in `.nightshift/defaults.toml`
+
+A department groups stations the way a company does; a sub-department is one inside it, two levels at most. Each role of this repository's jobs gets one line, in `.nightshift/defaults.toml`, keeping the file's other lines:
+
+```toml
+[departments]
+implementer = "Engineering/Development"
+code-auditor = "Engineering/Quality"
+blog-writer = "Marketing/Content"
+changelog-writer = "Marketing/Product Marketing"
+vault-curator = "Business Operations/Information Management"
+```
+
+- Name real parts of a company, by the work the role's jobs do rather than by its tools or permissions. A job that belongs elsewhere than the rest of its role needs its own role, and its own minion.
+- Reuse the names the user's other repositories use, spelled the same: `factory_status`, called without a repository, gives each job's `department`. The same name in two repositories is one department.
+- A department only organises the Floor, Line, Jobs and Factories, and grants nothing: limits stay on the minion's `tools` and the job's `[permissions]`.
+- Every key must be the `owner_role` of a job in this repository, so remove a role's line with its last job, and add one when a job brings a new role. A role with no line shows under **No department**.
+- Moving a role keeps each job's version, so its packages stay valid. Like any commit, it counts as a change for a job whose `scope` or `watch` covers `.nightshift/`, such as `scope = "."`.
+
+When setting up jobs, or asked to add departments: list every role with its jobs, propose a department for each, and ask the user to confirm the list; if you cannot ask, write the list you proposed. Then write the lines and go through steps 10 and 11. `validate_jobs` answers each job's `department`: check them. On a server that does not know `departments` yet, `validate_jobs` refuses the key: stop and say so.
 
 ## Create a routine
 
