@@ -101,13 +101,13 @@ def due(session: str, event: str | None, now: float) -> bool:
     return True
 
 
-def upload(url: str, token: str, body: bytes) -> str | None:
+def upload(url: str, token: str | None, body: bytes) -> str | None:
     """curl, not urllib: a cloud sandbox sets curl up for its proxy. Returns what went wrong. The key goes on stdin, so
-    no process list shows it."""
+    no process list shows it. No key: the environment's network secret for the factory's host adds it on the way out."""
     with tempfile.NamedTemporaryFile(suffix=".json") as data:  # Readable only by this user.
         data.write(body)
         data.flush()
-        config = f'header = "Authorization: Bearer {token}"\n'
+        config = f'header = "Authorization: Bearer {token}"\n' if token else ''
         done = subprocess.run(
             ["curl", "-sS", "-m", "15", "-o", "/dev/null", "-w", "%{http_code}", "-X", "PUT", "-H",
              "Content-Type: application/json", "--data-binary", f"@{data.name}", "--config", "-", url],
@@ -120,7 +120,7 @@ def upload(url: str, token: str, body: bytes) -> str | None:
 def main() -> None:
     token = os.environ.get("NIGHTSHIFT_TOKEN")
     remote = os.environ.get("CLAUDE_CODE_REMOTE_SESSION_ID")
-    if os.environ.get("CLAUDE_CODE_REMOTE") != "true" or not token or not remote:
+    if os.environ.get("CLAUDE_CODE_REMOTE") != "true" or not remote:
         return
     hook = json.load(sys.stdin)
     event = hook.get("hook_event_name")
@@ -137,7 +137,7 @@ def main() -> None:
     factory = os.environ.get("NIGHTSHIFT_URL", "https://nightshiftfactory.com").rstrip("/")
     problem = upload(f"{factory}/api/sessions/{session}/transcript", token,
                      json.dumps({"repository": repository.group(1), "steps": steps}).encode())
-    if problem and event == "Stop":
+    if problem and event == "Stop" and (token or problem != "HTTP 401"):  # No key and refused: this environment does not upload.
         print(json.dumps({"systemMessage": f"Night Shift could not upload this session: {problem}"}))
 
 
