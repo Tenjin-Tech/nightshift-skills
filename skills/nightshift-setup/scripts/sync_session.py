@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Night Shift session sync: a Claude Code hook that uploads what this cloud session did, so its runs' pages show it.
 
-Runs only in a cloud session with NIGHTSHIFT_TOKEN set. It never stops the session: every failure ends in exit 0, and a
+Runs only in a Claude Code cloud session. The environment's network secret for the factory's host adds the API key on
+the way out, or NIGHTSHIFT_TOKEN when it is set as a variable instead. It never stops the session: every failure ends in exit 0, and a
 failed upload at Stop reports itself as a system message. Thinking is left out, long text is cut, and the values of
 this environment's secrets are masked before anything leaves; the factory masks common secret shapes again."""
 import json
