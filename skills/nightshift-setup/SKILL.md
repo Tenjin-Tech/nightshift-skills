@@ -213,7 +213,9 @@ every = "7d"                              # weekly, whether or not anything chan
 # shift = "night"                         # only run between 22:00 and 06:00 UTC, whatever makes it due
 # agent = "codex"                         # only Codex workers run it ("claude": only Claude Code; "any": both)
 # agent = ["codex", "claude"]             # Codex while it can; Claude when Codex is out of allowance or not checking in
-# runs_on = "brain-a-reader"              # only routines whose NIGHTSHIFT_LABELS include this label run it
+# runs_on = "brain-a-reader"              # only routines whose NIGHTSHIFT_LABELS include this label, or the computer of that name, run it
+# secrets = ["BILLING_KEY"]               # on a computer: variables its session gets from that job's own Keychain entry
+# allow = ["Bash(bq query:*)"]            # on a computer: permission rules for its session alone
 watch = ["src"]                           # without every: also run again when these change
 output = ["docs_change"]
 # [[hopper]]                              # run on tickets: one per run, by Linear priority then oldest, whatever their tracker
@@ -247,6 +249,8 @@ external_writes = "pull_request"          # required with write_in_scope, and on
 - `tracker = "linear"`: the Linear tickets of `team` that carry `label` (in `states`, `["Todo", "Backlog"]` unless set). Night Shift reads them from the Linear workspace connected to the repository in Settings, Assigned issues, creates the label in `team` if neither the team nor the workspace has it, and takes only those created by the people ticked there as allowed to assign issues. The procedure still moves and comments the ticket, moves it back to its earlier status when a run cannot finish (the hopper offers it again only in `states`), and ends no_op to decline one for good. List several to take several teams or labels.
 
 `runs_on` names a label: only sessions whose `NIGHTSHIFT_LABELS` (comma-separated, set in the routine's environment) include it claim the job; others show `waiting for a worker labelled <label>`. Jobs without it run on any session. Set it only when the user asks, for example when one routine has access another lacks. It routes work, it is not a permission: anyone who can push the job can add the label, so tell the user never to give a labelled routine access that the repository's other writers should not have. Changing it never makes a job run again.
+
+A computer running nightshift-local also takes a job whose `runs_on` is its name, a label set with `nightshift-local jobs --label <label>`, or `computer` (any computer), when a route in Settings, Assigned issues binds it to the repository. Suggest it when a job needs what only a prepared machine has: local credentials, a bootstrapped checkout, a browser session. It never takes a job without `runs_on`, runs a job only once it is merged into the default branch (its `secrets` and `allow` are read there), and runs read-only jobs on Claude Code for now. On a computer, `secrets` names the environment variables the job's session gets, each set once on that computer with `nightshift-local job-secret <owner/repo> <job> <NAME>` (the value on stdin, never on the command line), and no other job sees them; `allow` lists the Claude Code permission rules only that job's session may use, beside the committed `.claude/settings.json`. A checkout a person prepared for the jobs (an env file, a virtualenv) is named with `nightshift-local jobs --checkout <owner/repo> <path>`, and `job_bootstrap` in `.nightshift/local.toml` refreshes it before each run. Routines ignore `secrets` and `allow`: their environment holds what their cloud environment sets.
 
 A job that needs another job's result declares it; the factory rejects cycles and unknown outputs:
 
